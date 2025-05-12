@@ -1,36 +1,102 @@
 # main.py
 
 import os
-import inoutput  # inoutput.py 모듈 import
+import json
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
+
+# CustomTkinter 초기화
+ctk.set_appearance_mode("System")  # "Dark", "Light", "System"
+ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue"
+
+def generate_tt_txt():
+    # 파일 선택 다이얼로그
+    input_path = filedialog.askopenfilename(
+        title="변환할 .ipynb 파일 선택",
+        filetypes=[("IPython Notebook", "*.ipynb")]
+    )
+
+    if not input_path:
+        messagebox.showerror("오류", "파일을 선택하지 않았습니다.")
+        return
+
+    # JSON 읽기
+    with open(input_path, 'r', encoding='utf-8') as f:
+        notebook_data = json.load(f)
+
+    json_as_text = json.dumps(notebook_data, indent=2, ensure_ascii=False)
+
+    # 바탕화면 경로
+    desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
+    output_path = os.path.join(desktop_path, 'tt.txt')
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(json_as_text)
+
+    messagebox.showinfo("완료", f"tt.txt가 바탕화면에 저장되었습니다: {output_path}")
+
+def show_todo_window(ToDoList):
+    # 메인 창
+    window = ctk.CTk()
+    window.title("ToDoList 점검 결과")
+    window.geometry("600x500")
+
+    # 제목 라벨
+    title_label = ctk.CTkLabel(window, text="ToDoList 점검 결과", font=("Helvetica", 20, "bold"))
+    title_label.pack(pady=20)
+
+    # 요약 텍스트
+    if ToDoList:
+        summary_text = f"총 {len(ToDoList)}개 항목이 발견되었습니다."
+    else:
+        summary_text = "모든 항목이 채워졌습니다."
+
+    summary_label = ctk.CTkLabel(window, text=summary_text, font=("Helvetica", 14))
+    summary_label.pack(pady=10)
+
+    # 리스트 박스 (CustomTkinter Textbox로 대체)
+    textbox = ctk.CTkTextbox(window, width=500, height=300, font=("Consolas", 12))
+    textbox.pack(pady=10)
+
+    if ToDoList:
+        for idx, todo in enumerate(ToDoList, 1):
+            textbox.insert("end", f"{idx:02d} | {todo}\n")
+    else:
+        textbox.insert("end", "✔ 모든 항목이 채워졌습니다.\n")
+
+    textbox.configure(state="disabled")  # 읽기 전용
+
+    # 닫기 버튼
+    close_button = ctk.CTkButton(window, text="닫기", command=window.destroy)
+    close_button.pack(pady=20)
+
+    window.mainloop()
 
 def main():
-    # 1. tt.txt 파일 생성
-    inoutput.generate_tt_txt()
+    # tt.txt 생성
+    generate_tt_txt()
 
-    # 2. tt.txt 파일 경로 설정 (바탕화면 기준)
+    # tt.txt 경로
     desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
     tt_txt_path = os.path.join(desktop_path, 'tt.txt')
 
-    # 3. tt.txt 읽기
     if not os.path.exists(tt_txt_path):
-        print("tt.txt 파일을 찾을 수 없습니다.")
+        messagebox.showerror("오류", "tt.txt 파일을 찾을 수 없습니다.")
         return
 
+    # ToDoWords 찾기
     ToDoWords = ['code:', '설명', '아래에 코드 작성']
     ToDoList = []
 
     with open(tt_txt_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
-    # 4. ToDoWords가 포함된 줄 찾기
     for line in lines:
         if any(word in line for word in ToDoWords):
             ToDoList.append(line.strip())
 
-    # 5. 결과 출력
-    print(f"ToDoList (총 {len(ToDoList)}개 항목)")
-    for idx, todo in enumerate(ToDoList, 1):
-        print(f"{idx}: {todo}")
+    # GUI로 출력
+    show_todo_window(ToDoList)
 
 if __name__ == "__main__":
     main()
