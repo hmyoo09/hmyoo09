@@ -4,7 +4,6 @@ import json
 
 def file_upload_maketxt(file):
     if file is None:
-        print('병신')
         raise gr.Error("파일이 존재하지 않습니다.")
     file_path=file.name
     file_size=os.path.getsize(file_path)
